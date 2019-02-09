@@ -1,2 +1,2 @@
-# swat_cuda
-A GPU-accelerated smith-waterman algorithm.
+# cuda_sw
+A GPU-accelerated smith-waterman algorithm. It is in early development stage.
