@@ -1,0 +1,47 @@
+1048576
+tpb 20 bpg 33
+y shape (20,)
+Traceback (most recent call last):
+  File "swat_cuda.py", line 447, in <module>
+    mod = SourceModule(swatc)
+  File "/home/xh/compiler/anaconda2/lib/python2.7/site-packages/pycuda/compiler.py", line 291, in __init__
+    arch, code, cache_dir, include_dirs)
+  File "/home/xh/compiler/anaconda2/lib/python2.7/site-packages/pycuda/compiler.py", line 254, in compile
+    return compile_plain(source, options, keep, nvcc, cache_dir, target)
+  File "/home/xh/compiler/anaconda2/lib/python2.7/site-packages/pycuda/compiler.py", line 137, in compile_plain
+    stderr=stderr.decode("utf-8", "replace"))
+pycuda.driver.CompileError: nvcc compilation of /tmp/tmpYmY38k/kernel.cu failed
+[command: nvcc --cubin -arch sm_61 -I/home/xh/compiler/anaconda2/lib/python2.7/site-packages/pycuda/cuda kernel.cu]
+[stderr:
+kernel.cu(9): warning: variable "s1" was declared but never referenced
+
+kernel.cu(10): warning: variable "I" was declared but never referenced
+
+kernel.cu(12): warning: variable "tid" was declared but never referenced
+
+kernel.cu(12): warning: variable "W" was declared but never referenced
+
+kernel.cu(228): warning: statement is unreachable
+
+kernel.cu(250): warning: loop is not reachable
+
+kernel.cu(76): warning: variable "S1" was declared but never referenced
+
+kernel.cu(81): warning: variable "bdm" was declared but never referenced
+
+kernel.cu(85): warning: variable "W" was declared but never referenced
+
+kernel.cu(419): warning: use of "=" where "==" may have been intended
+
+kernel.cu(506): warning: dynamic initialization in unreachable code
+
+kernel.cu(338): warning: variable "bth" was declared but never referenced
+
+kernel.cu(644): error: identifier "i1" is undefined
+
+kernel.cu(545): warning: variable "bth" was declared but never referenced
+
+kernel.cu(732): warning: variable "bth" was declared but never referenced
+
+1 error detected in the compilation of "/tmp/tmpxft_000017dc_00000000-7_kernel.cpp1.ii".
+]

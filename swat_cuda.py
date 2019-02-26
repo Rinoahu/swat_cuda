@@ -442,6 +442,7 @@ __global__ void swat(char *qry, long N, char *S1, long M, long Go, long Ge)
 
 #mod = SourceModule(swatc0)
 swatc = open('swat_cuda.cu', 'r').read()
+#swatc = swatc % {'CONST': S}
 #print(swatc)
 #mod = SourceModule(swatc, options=['-rdc=true','-lcudart','-lcudadevrt','--machine=64'], arch='sm_52')
 mod = SourceModule(swatc)
@@ -461,7 +462,7 @@ GE = np.int64(1)
 start = drv.Event()
 end = drv.Event()
 start.record()
-for itr in xrange(2):
+for itr in xrange(1):
     #swat_cuda(d_y, D, d_x, N, S, block=(tpb, 1, 1), grid=(bpg, 1))
     #swat_cuda(d_y, D*1000, d_x, N, S, d_H, d_F, block=(tpb, 1, 1), grid=(bpg, 1))
     print 'tpb', tpb, 'bpg', bpg, bpg*bpg
