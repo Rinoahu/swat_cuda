@@ -1,47 +1,72 @@
-1048576
-tpb 20 bpg 33
-y shape (20,)
-Traceback (most recent call last):
-  File "swat_cuda.py", line 447, in <module>
-    mod = SourceModule(swatc)
-  File "/home/xh/compiler/anaconda2/lib/python2.7/site-packages/pycuda/compiler.py", line 291, in __init__
-    arch, code, cache_dir, include_dirs)
-  File "/home/xh/compiler/anaconda2/lib/python2.7/site-packages/pycuda/compiler.py", line 254, in compile
-    return compile_plain(source, options, keep, nvcc, cache_dir, target)
-  File "/home/xh/compiler/anaconda2/lib/python2.7/site-packages/pycuda/compiler.py", line 137, in compile_plain
-    stderr=stderr.decode("utf-8", "replace"))
-pycuda.driver.CompileError: nvcc compilation of /tmp/tmpYmY38k/kernel.cu failed
-[command: nvcc --cubin -arch sm_61 -I/home/xh/compiler/anaconda2/lib/python2.7/site-packages/pycuda/cuda kernel.cu]
-[stderr:
-kernel.cu(9): warning: variable "s1" was declared but never referenced
+==14211== NVPROF is profiling process 14211, command: python swat_cuda.py 2**30 2**9
+1073741824
+tpb 512 bpg 1025
+y shape (512,)
+tpb 512 bpg 1025 1050625
+('SourceModule time and first three results:', 4.76733935546875)
+==14211== Profiling application: python swat_cuda.py 2**30 2**9
+==14211== Profiling result:
+Time(%)      Time     Calls       Avg       Min       Max  Name
+ 96.42%  4.76300s         1  4.76300s  4.76300s  4.76300s  swat_print
+  3.58%  176.73ms         2  88.365ms     992ns  176.73ms  [CUDA memcpy HtoD]
 
-kernel.cu(10): warning: variable "I" was declared but never referenced
+==14211== API calls:
+Time(%)      Time     Calls       Avg       Min       Max  Name
+ 87.56%  4.76399s         1  4.76399s  4.76399s  4.76399s  cuEventSynchronize
+  6.70%  364.41ms         1  364.41ms  364.41ms  364.41ms  cuCtxCreate
+  3.25%  176.69ms         2  88.344ms  25.111us  176.66ms  cuMemcpyHtoD
+  2.22%  120.73ms         1  120.73ms  120.73ms  120.73ms  cuCtxDetach
+  0.13%  6.8764ms         2  3.4382ms  3.2098ms  3.6666ms  cuMemFree
+  0.08%  4.1059ms         1  4.1059ms  4.1059ms  4.1059ms  cuLaunchKernel
+  0.04%  2.0807ms         2  1.0404ms  282.55us  1.7982ms  cuMemAlloc
+  0.02%  1.0118ms        18  56.213us     229ns  1.0057ms  cuDeviceGetAttribute
+  0.01%  481.49us         1  481.49us  481.49us  481.49us  cuModuleLoadDataEx
+  0.00%  122.37us         1  122.37us  122.37us  122.37us  cuModuleUnload
+  0.00%  10.713us         2  5.3560us  5.2530us  5.4600us  cuEventRecord
+  0.00%  7.6540us         2  3.8270us  3.2450us  4.4090us  cuEventCreate
+  0.00%  6.8030us         6  1.1330us     298ns  3.7450us  cuCtxPopCurrent
+  0.00%  5.3740us         6     895ns     298ns  3.4990us  cuCtxPushCurrent
+  0.00%  5.2190us         2  2.6090us     864ns  4.3550us  cuEventDestroy
+  0.00%  3.2610us         1  3.2610us  3.2610us  3.2610us  cuEventElapsedTime
+  0.00%  2.4820us         5     496ns     316ns     652ns  cuDeviceGet
+  0.00%  2.3140us         7     330ns     212ns     638ns  cuDeviceComputeCapability
+  0.00%  2.2360us         4     559ns     487ns     689ns  cuCtxGetDevice
+  0.00%  1.9030us         3     634ns     204ns  1.2770us  cuDeviceGetCount
+  0.00%  1.2920us         1  1.2920us  1.2920us  1.2920us  cuModuleGetFunction
+  0.00%     768ns         1     768ns     768ns     768ns  cuFuncSetBlockShape
+==14874== NVPROF is profiling process 14874, command: python swat_cuda.py 2**30 2**8
+1073741824
+tpb 256 bpg 1025
+y shape (256,)
+tpb 256 bpg 1025 1050625
+('SourceModule time and first three results:', 1.9112115478515626)
+==14874== Profiling application: python swat_cuda.py 2**30 2**8
+==14874== Profiling result:
+Time(%)      Time     Calls       Avg       Min       Max  Name
+ 91.53%  1.90679s         1  1.90679s  1.90679s  1.90679s  swat_print
+  8.47%  176.52ms         2  88.261ms     960ns  176.52ms  [CUDA memcpy HtoD]
 
-kernel.cu(12): warning: variable "tid" was declared but never referenced
-
-kernel.cu(12): warning: variable "W" was declared but never referenced
-
-kernel.cu(228): warning: statement is unreachable
-
-kernel.cu(250): warning: loop is not reachable
-
-kernel.cu(76): warning: variable "S1" was declared but never referenced
-
-kernel.cu(81): warning: variable "bdm" was declared but never referenced
-
-kernel.cu(85): warning: variable "W" was declared but never referenced
-
-kernel.cu(419): warning: use of "=" where "==" may have been intended
-
-kernel.cu(506): warning: dynamic initialization in unreachable code
-
-kernel.cu(338): warning: variable "bth" was declared but never referenced
-
-kernel.cu(644): error: identifier "i1" is undefined
-
-kernel.cu(545): warning: variable "bth" was declared but never referenced
-
-kernel.cu(732): warning: variable "bth" was declared but never referenced
-
-1 error detected in the compilation of "/tmp/tmpxft_000017dc_00000000-7_kernel.cpp1.ii".
-]
+==14874== API calls:
+Time(%)      Time     Calls       Avg       Min       Max  Name
+ 74.56%  1.90678s         1  1.90678s  1.90678s  1.90678s  cuEventSynchronize
+ 12.36%  316.14ms         1  316.14ms  316.14ms  316.14ms  cuCtxCreate
+  6.90%  176.47ms         2  88.234ms  23.538us  176.45ms  cuMemcpyHtoD
+  5.32%  136.12ms         1  136.12ms  136.12ms  136.12ms  cuCtxDetach
+  0.43%  11.065ms         2  5.5327ms  1.6901ms  9.3754ms  cuMemAlloc
+  0.24%  6.0258ms         2  3.0129ms  2.8150ms  3.2108ms  cuMemFree
+  0.16%  4.0683ms         1  4.0683ms  4.0683ms  4.0683ms  cuLaunchKernel
+  0.02%  449.19us         1  449.19us  449.19us  449.19us  cuModuleLoadDataEx
+  0.00%  122.34us         1  122.34us  122.34us  122.34us  cuModuleUnload
+  0.00%  10.592us         2  5.2960us  4.8490us  5.7430us  cuEventRecord
+  0.00%  6.9520us        18     386ns     205ns  1.1580us  cuDeviceGetAttribute
+  0.00%  6.7710us         6  1.1280us     279ns  4.1500us  cuCtxPopCurrent
+  0.00%  6.2670us         2  3.1330us  1.9570us  4.3100us  cuEventCreate
+  0.00%  5.0550us         6     842ns     262ns  3.3760us  cuCtxPushCurrent
+  0.00%  4.4790us         2  2.2390us     467ns  4.0120us  cuEventDestroy
+  0.00%  3.1870us         1  3.1870us  3.1870us  3.1870us  cuEventElapsedTime
+  0.00%  2.5670us         4     641ns     541ns     718ns  cuCtxGetDevice
+  0.00%  2.2100us         5     442ns     243ns     600ns  cuDeviceGet
+  0.00%  2.0180us         7     288ns     172ns     486ns  cuDeviceComputeCapability
+  0.00%  2.0100us         3     670ns     215ns  1.3950us  cuDeviceGetCount
+  0.00%  1.2660us         1  1.2660us  1.2660us  1.2660us  cuModuleGetFunction
+  0.00%     732ns         1     732ns     732ns     732ns  cuFuncSetBlockShape

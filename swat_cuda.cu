@@ -72,7 +72,7 @@ __global__ void swat_print(char *qry, long N, char *refs, long M, short Go, shor
     //int N1=N+1;
     const int D=4097;
 
-    char S0[D], S1[D];
+    char S0[D], S1[D], S3[500000];
     //__shared__ char S0[D], S1[D];
     //short F[D], H0[D], H1[D];
     __shared__ short F[D], H0[D]; 
@@ -83,7 +83,7 @@ __global__ void swat_print(char *qry, long N, char *refs, long M, short Go, shor
 
 
     //__shared__ int H[4097];
-    short x, y;
+    short x, y, z;
     //const long tid=threadIdx.x, bx=blockIdx.x, by=blockIdx.y, dmx=blockDim.x, dmy=blockDim.y, bid=by+bx*dmy;
     const long tid=threadIdx.x, bx=blockIdx.x, by=blockIdx.y, bdmx=blockDim.x, bid=bx+by*gridDim.x;
     const long th=bdmx, step=N, bth=256;
@@ -130,6 +130,9 @@ __global__ void swat_print(char *qry, long N, char *refs, long M, short Go, shor
             for(long i=tid, i1=tid+1; i<N; i+=th, i1+=th)
             //long i=tid, i1=tid+1;
             {
+                short z = H0[i];
+                __syncthreads();
+
                 // update F
                 x = H0[i1]-Go;
                 y = F[i1]-Ge;
@@ -141,7 +144,9 @@ __global__ void swat_print(char *qry, long N, char *refs, long M, short Go, shor
                 //x = H0[i] + 4-x*2;
                 //x = H0[i] + 2;
                 //x = H0[i] + 4*(S0[i]!=S1j) - 2;
-                x = H0[i] + (S0[i]!=S1j)?-2:2;
+
+                //x = H0[i] + (S0[i]!=S1j)?-2:2;
+                x = z + (S0[i]!=S1j)?-2:2;
                 y = F[i1];
                 x = max(x, y);
                 x = max(x, 0);
@@ -186,6 +191,7 @@ __global__ void swat_print(char *qry, long N, char *refs, long M, short Go, shor
                     }
                     else{
                         atomicMax(&(H1[k]), x);
+                        //H1[k] = max(H1[k], x);
                         x -= Ge;
                     }
                 }

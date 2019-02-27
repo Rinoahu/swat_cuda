@@ -9,7 +9,7 @@ git config --global user.name Rinoahu
 git remote rm origin
 
 git add -A .
-git commit -m 'add cpu version of parallelized swat to verify my parallization of swat algorithm'
+git commit -m 'use a atomic operation to update F value'
 git remote add origin https://github.com/Rinoahu/swat_cuda
 
 git pull origin master
