@@ -40,7 +40,7 @@ def getitem(y, i, n=5):
     a, b = i // p, i % p
     return (y[a] >> b * n) & base
 
-
+initial = time();
 
 DIM = int(eval(sys.argv[1]))
 SIM = int(eval(sys.argv[2]))
@@ -55,12 +55,15 @@ print N
 
 # determin thread_per_block and block_per_grid
 tpb =min(2**10, S)
+#tpb =min(2**10, S//2)
 #bpg = (N + S - 1) // S
 #bpg = (bpg + tpb - 1) // tpb
 #bpg = S // tpb
 #bpg =2**15
 
-SL = 2**10
+SL = S
+SL = np.int64(SL)
+#SL=S
 bpg = int(((N + SL - 1) // SL) **.5 +1)
 
 print 'tpb', tpb, 'bpg', bpg
@@ -448,33 +451,47 @@ swatc = open('swat_cuda.cu', 'r').read()
 mod = SourceModule(swatc)
 #swat_cuda = mod.get_function("calls")
 swat_cuda = mod.get_function("swat_print")
+#swat_cuda = mod.get_function("swat_strip")
+
 #swat_cuda(d_y, D, d_x, N, S, block=(tpb, 1, 1), grid=(bpg, 1))
 
 
 #raise SystemExit()
 
-GO = np.int64(11)
-GE = np.int64(1)
+GO = np.int16(11)
+GE = np.int16(1)
 
 #swat_cuda(d_y, D, d_x, N, GO, GE, block=(tpb, 1, 1), grid=(bpg, 1))
 #raise SystemExit()
+print 'cpu time', time() - initial
+initial = time()
+
 
 start = drv.Event()
 end = drv.Event()
 start.record()
-for itr in xrange(1):
+sq = 512
+#for itr in xrange((sq+D-1)//D):
+if 1:
     #swat_cuda(d_y, D, d_x, N, S, block=(tpb, 1, 1), grid=(bpg, 1))
     #swat_cuda(d_y, D*1000, d_x, N, S, d_H, d_F, block=(tpb, 1, 1), grid=(bpg, 1))
-    print 'tpb', tpb, 'bpg', bpg, bpg*bpg
-    swat_cuda(d_y, D, d_x, N, GO, GE, block=(tpb, 1, 1), grid=(bpg, bpg))
-    #swat_cuda(d_y, D, d_x, N, GO, GE, block=(tpb, 1, 1), grid=(bpg, 1))
+    #tpb=np.int64(min(blk*2, 2**10))
+    #bpg = np.int64(N / tpb)
+    print 'D', D, 'N', N,  'SL', SL, 'tpb', tpb, 'bpg', bpg, bpg*bpg
+    #//tpb = np.int64(tpb // 4)
+    #swat_cuda(d_y, D, d_x, N, GO, GE, block=(tpb, 1, 1), grid=(bpg, bpg))
+    #swat_cuda(d_y, tpb, d_x, N, GO, GE, block=(tpb, 1, 1), grid=(bpg, bpg))
+    swat_cuda(d_y, D, d_x, np.int64(N), GO, GE, SL, block=(tpb, 1, 1), grid=(bpg, bpg))
+    #swat_cuda(d_y, D, d_x, np.int64(N), GO, GE, SL, block=(tpb, 1, 1), grid=(bpg, 1))
 
     #context.synchronize()
+
 end.record()
 end.synchronize()
 secs = start.time_till(end)*1e-3
-
 print("SourceModule time and first three results:", secs)
+
+print 'cpu', time() - initial
 
 @njit
 def swat(x, y, S, Go=11, Ge=2):
