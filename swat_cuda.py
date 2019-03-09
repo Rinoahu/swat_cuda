@@ -54,7 +54,7 @@ S = np.int64(SIM)
 print N
 
 # determin thread_per_block and block_per_grid
-tpb =min(2**10, S)
+tpb =min(2**8, S)
 #tpb =min(2**10, S//2)
 #bpg = (N + S - 1) // S
 #bpg = (bpg + tpb - 1) // tpb
@@ -450,8 +450,8 @@ swatc = open('swat_cuda.cu', 'r').read()
 #mod = SourceModule(swatc, options=['-rdc=true','-lcudart','-lcudadevrt','--machine=64'], arch='sm_52')
 mod = SourceModule(swatc)
 #swat_cuda = mod.get_function("calls")
-swat_cuda = mod.get_function("swat_print")
-#swat_cuda = mod.get_function("swat_strip")
+#swat_cuda = mod.get_function("swat_print")
+swat_cuda = mod.get_function("swat_strip")
 
 #swat_cuda(d_y, D, d_x, N, S, block=(tpb, 1, 1), grid=(bpg, 1))
 

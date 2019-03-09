@@ -528,19 +528,18 @@ __global__ void swat_print1(char *qry, long N, char *refs, long M, short Go, sho
 
 
 // set the "thread per block" to 128
-__global__ void swat_strip(char *qry, long N, char *refs, long M, short Go, short Ge, long step)
+__global__ void swat_strip0(char *qry, long N, char *refs, long M, short Go, short Ge, long step)
 {
     //int N1=N+1;
-    const int D=1024*4+1;
+    const int D=32*142;
 
     //int8_t S0[D], S1[D];
     __shared__ int8_t S0[D], S1[D], BLOSUM[400][32];
     //__shared__ int8_t BLOSUM[D][32];
     //short F[D], H0[D], H1[D];
-    __shared__ short F[D], H0[D], H1[D];
+    __shared__ short F[D], H0[D], H1[D], qst[D], sst[D], mch[D], gop[D];
     //volatile __shared__ short H1[D];
-    __shared__ int starts[513];
-
+    int starts[513];
 
     short x, y;
     //const long tid=threadIdx.x, bx=blockIdx.x, by=blockIdx.y, dmx=blockDim.x, dmy=blockDim.y, bid=by+bx*dmy;
@@ -549,8 +548,15 @@ __global__ void swat_strip(char *qry, long N, char *refs, long M, short Go, shor
     const long th=bdmx, bth=256, lane=tid%32;
 
     int jump=(N+th-1)/th;
-    jump=(jump%2==0)?jump:jump+1;
+    jump=(jump%2==1)?jump:jump+1;
     //jump=1;
+
+    /*
+    if(tid==0)
+    {
+        printf("jump %d D %d\n", jump, D);
+    }
+    */
 
     if(tid>N)
     {
@@ -609,6 +615,7 @@ __global__ void swat_strip(char *qry, long N, char *refs, long M, short Go, shor
                 //int flag = (S0[i]==S1j) * 4 - 2
                 //x = H0[i] + (S0[i]==S1j) * 4 - 2;
                 //int8_t idx = S0[0]*20+S1j, mch = BLOSUM[idx][lane];
+                //int8_t mch = H0[i] + (S0[i]!=S1j)?-2:2;
                 int8_t mch = BLOSUM[S0[0]*20+S1j][lane];
 
                 //short mch = BLOSUM[i1][lane];
@@ -624,25 +631,25 @@ __global__ void swat_strip(char *qry, long N, char *refs, long M, short Go, shor
                 //H0[i] = -1;
                 H1[i1] = x;
             }
-            starts[tid] = x;
+            //starts[tid] = x;
             __syncthreads();
 
 
             // use atomic_max to update
-            x = starts[tid]-Go;
+            //x = starts[tid]-Go;
             #pragma unroll
             //for(int i=end+jump, i1;i<N-jump;i+=jump)
             for(int i=tid, i1;i<513;i++)
             {
                 i1 = i+1;
-                if(x<=starts[i1])
-                //if(x<=H1[i1])
+                //if(x<=starts[i1])
+                if(x<=H1[i1])
                 {
                     break;
                 }
                 else
                 {
-                    atomicMax(&(starts[i1]), x);
+                    //atomicMax(&(starts[i1]), x);
                     //H1[i1] = x;
                     x -= Ge;
                 }
@@ -664,7 +671,301 @@ __global__ void swat_strip(char *qry, long N, char *refs, long M, short Go, shor
                 }
 
             }
+        }
+   }
+}
 
+
+// set the "thread per block" to 128
+__global__ void swat_strip1(char *qry, long N, char *refs, long M, short Go, short Ge, long step)
+{
+    //int N1=N+1;
+    //const int D=32*142;
+    const int D=32*32*4+1;
+
+    //int8_t S0[D], S1[D];
+    __shared__ int8_t S0[D], S1[D], BLOSUM[400][32];
+    //__shared__ int8_t BLOSUM[D][32];
+    //short F[D], H0[D], H1[D];
+    __shared__ short F[D], H0[D], H1[D], qst[D], sst[D], mch[D], gop[D];
+    //__shared__ short F[D], H0[D], H1[D]; 
+    //__shared__ int8_t qst[D], sst[D], mch[D], gop[D];
+    //volatile __shared__ short H1[D];
+    //__shared__ int starts[512];
+
+    short x, y;
+    //const long tid=threadIdx.x, bx=blockIdx.x, by=blockIdx.y, dmx=blockDim.x, dmy=blockDim.y, bid=by+bx*dmy;
+    const long tid=threadIdx.x, bx=blockIdx.x, by=blockIdx.y, bdmx=blockDim.x, bid=bx+by*gridDim.x;
+    //const long th=bdmx, step=256, bth=256;
+    const long th=bdmx, bth=256, lane=tid%32;
+
+    int jump=(N+th-1)/th;
+    jump=(jump%2==1)?jump:jump+1;
+    //jump=1;
+
+    /*
+    if(tid==0)
+    {
+        printf("jump %d D %d\n", jump, D);
+    }
+    */
+
+    if(tid>N)
+    {
+        return;
+    }
+
+    if(bid<M/step)
+    {
+        // load qry and ref into S0, S1;
+        #pragma unroll 4
+        for(long i=tid; i<N; i+=th)
+        {
+            S0[i] = qry[i]%20;
+            //S1[i] = refs[bid+i];
+            F[i] = 0;
+            H0[i] = 0;
+            H1[i] = 0;
+        }
+
+        #pragma unroll 4 
+        for(long i=tid, start=bid*step; i<step; i+=th)
+        {
+            S1[i]=refs[i+start]%20;
+        }
+
+        __syncthreads();
+
+        #pragma unroll 4 
+        for(int j=0; j<step; j++)
+        {
+
+            char S1j = S1[j];
+            #pragma unroll
+            int start = tid*jump, end=start+jump;
+            end = end<N?end:N;
+            short Ei = 0, Fi1=0;
+            #pragma unroll
+            for(int i=start; i<end; i++)
+            {
+                int i1 = i + 1;
+                short H0i1=H0[i1], H0i=H0[i];
+                // update F
+                //x = H0[i1]-Go;
+                x = H0i1 - Go;
+                Fi1 = F[i1]-Ge;
+                Fi1 = max(x, Fi1);
+                F[i1] = Fi1;
+
+                // update E
+                x = Ei - Go;
+                //y = H0[i] - Ge;
+                y = H0i - Ge;
+                Ei = max(x, y);
+
+                //x = H0[i] + (S0[i]!=S1j)?-2:2;
+                //int flag = (S0[i]==S1j) * 4 - 2
+                //x = H0[i] + (S0[i]==S1j) * 4 - 2;
+                //int8_t idx = S0[0]*20+S1j, mch = BLOSUM[idx][lane];
+                //int8_t mch = H0[i] + (S0[i]!=S1j)?-2:2;
+                int8_t mch = BLOSUM[S0[0]*20+S1j][lane];
+
+                //short mch = BLOSUM[i1][lane];
+                //x = H0[i] + BLOSUM[tid%200][tid%32];
+                //x = H0[i] + mch;
+                x = H0i + mch;
+                x = max(x, Ei);
+                //x = x > Ei ? x: Ei;
+                x = max(x, Fi1);
+                //x = x > Fi1 ? x: Fi1;
+                x = max(x, 0);
+                //x = x > 0 ? x: 0;
+                //H1[i1] = x;
+                //H0[i] = -1;
+                H1[i1] = x;
+            }
+            //starts[tid] = x;
+            //__syncthreads();
+
+
+            /*
+            // use atomic_max to update
+            x = starts[tid]-Go - Ge*jump+Ge;
+            y = Ge*jump;
+            #pragma unroll
+            //for(int i=end+jump, i1;i<N-jump;i+=jump)
+            for(int i=tid, i1;i<512;i++)
+            {
+                i1 = i+1;
+                if(x<=starts[i1])
+                //if(x<=H1[i1])
+                {
+                    break;
+                }
+                else
+                {
+                    atomicMax(&(starts[i1]), x);
+                    //H1[i1] = x;
+                    x -= y;
+                }
+            }
+
+            __syncthreads();
+            x = starts[tid];
+            H1[start] = x;
+            x -= Go;
+            for(int i=start+1; i<end; i++)
+            {
+                int i1 = i + 1;
+                if(H1[i1]>x)
+                {
+                    break;
+                }
+                else
+                {
+                    H1[i1] = x;
+                    x -= Ge;
+                }
+
+            }
+            */
+
+        }
+   }
+}
+
+
+
+
+// set the "thread per block" to 128
+__global__ void swat_strip(char *qry, long N, char *refs, long M, short Go, short Ge, long step)
+{
+    //int N1=N+1;
+    //const int D=32*142;
+    const int D=32*32*4+1;
+
+    //int8_t S0[D], S1[D];
+    //__shared__ int8_t S0[D], S1[D], BLOSUM[400][32];
+    __shared__ int8_t S1[D], BLOSUM[400][32];
+    //int8_t S0[513][256];
+    int8_t S0[D*256];
+
+    //__shared__ int8_t BLOSUM[D][32];
+    //short F[D], H0[D], H1[D];
+    __shared__ short F[D], H0[D], qst[D], sst[D], mch[D], gop[D];
+    //__shared__ short F[D], H0[D], H1[D]; 
+    //__shared__ int8_t qst[D], sst[D], mch[D], gop[D];
+    //volatile __shared__ short H1[D];
+    //__shared__ int starts[512];
+
+    short x, y;
+    //const long tid=threadIdx.x, bx=blockIdx.x, by=blockIdx.y, dmx=blockDim.x, dmy=blockDim.y, bid=by+bx*dmy;
+    const long tid=threadIdx.x, bx=blockIdx.x, by=blockIdx.y, bdmx=blockDim.x, bid=bx+by*gridDim.x;
+    //const long th=bdmx, step=256, bth=256;
+    const long th=bdmx, bth=256, lane=tid%32;
+    int16_t OUT[2048][256];
+
+    int jump=(N+th-1)/th;
+    jump=(jump%2==1)?jump:jump+1;
+    //jump=1;
+
+    if(tid==-1)
+    {
+        printf("jump %d D %d th %d\n", jump, D, th);
+    }
+
+    if(tid>N)
+    {
+        return;
+    }
+
+    if(bid<M/step)
+    {
+        // load qry and ref into S0, S1;
+        #pragma unroll 4
+        for(long i=tid; i<N; i+=th)
+        {
+            //S0[i] = qry[i]%20;
+            //S1[i] = refs[bid+i];
+            F[i] = 0;
+            H0[i] = 0;
+            //H1[i] = 0;
+        }
+
+        #pragma unroll 4 
+        for(long i=tid, start=bid*step; i<step; i+=th)
+        {
+            S1[i]=refs[i+start]%20;
+            //S1[i][tid]=refs[i+start]%20;
+
+        }
+
+        for(int tmp=0; tmp<256; tmp++)
+        {
+        for(int i=tid, start=bid*step; i<step; i+=th)
+        {
+            //S0[i][tid]=refs[i+start]%20;
+            S0[i+tmp*D] =refs[i+start]%20;
+            //S[i][tmp]=refs[i+start]%20;
+
+        }
+        }
+        __syncthreads();
+
+        #pragma unroll 16 
+        for(int tmp=0; tmp<1024; tmp+=jump)
+        {
+        for(int j=0; j<step; j++)
+        {
+            //char S1j = S1[j];
+            char S1j = S1[j];
+            #pragma unroll
+            //int start = tid*jump, end=start+jump;
+            //int start = tmp*jump, end=start+jump;
+            int start = tmp, end=start+jump;
+            //end = end<N?end:N;
+            end = min(end, 1024);
+            short Ei = 0, Fi1=0, H0i=0;
+            #pragma unroll
+            for(int i=start; i<end; i++)
+            {
+                int i1 = i + 1;
+                short H0i1=H0[i1];
+                // update F
+                //x = H0[i1]-Go;
+                x = H0i1 - Go;
+                Fi1 = F[i1]-Ge;
+                Fi1 = max(x, Fi1);
+                F[i1] = Fi1;
+
+                // update E
+                x = Ei - Go;
+                //y = H0[i] - Ge;
+                y = H0i - Ge;
+                Ei = max(x, y);
+
+                //x = H0[i] + (S0[i]!=S1j)?-2:2;
+                //int8_t mch = BLOSUM[S0[i][tid]*20+S1j][lane];
+                //char S0i=S0[i%513][tid%256];
+                char S0i=S0[i];
+                //int8_t mch = BLOSUM[S0i*20+(S1j%20)][lane];
+                //int8_t mch = (S0i==S1j);
+                if(tid==-1)
+                {
+                    printf("S0i %d %d %d\n", i%513, tid%256, S0i);
+                }
+                int8_t mch=1;
+                x = H0i + mch;
+                x = max(x, Ei);
+                x = max(x, Fi1);
+                x = max(x, 0);
+                //H1[i1] = x;
+                H0i = H0[i1];
+                H0[i1] = x;
+            }
+            OUT[j][tid] = x;
+        }
+        //__syncthreads();
         }
    }
 }
