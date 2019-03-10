@@ -920,15 +920,18 @@ __global__ void swat_strip(char *qry, long N, char *refs, long M, short Go, shor
             //char S1j = S1[j];
             char S1j = S1[j];
             #pragma unroll
-            //int start = tid*jump, end=start+jump;
+            int start = tid*jump, end=start+jump;
             //int start = tmp*jump, end=start+jump;
-            int start = tmp, end=start+jump;
+            //int start = tmp, end=start+jump;
             //end = end<N?end:N;
-            end = min(end, 1024);
+            end = min(end, D);
             short Ei = 0, Fi1=0, H0i=0;
+            int cidx = tmp;
             #pragma unroll
             for(int i=start; i<end; i++)
+            //for(int i0=0; i0<jump; i0++)
             {
+                //int i= i0+start;
                 int i1 = i + 1;
                 short H0i1=H0[i1];
                 // update F
@@ -947,7 +950,9 @@ __global__ void swat_strip(char *qry, long N, char *refs, long M, short Go, shor
                 //x = H0[i] + (S0[i]!=S1j)?-2:2;
                 //int8_t mch = BLOSUM[S0[i][tid]*20+S1j][lane];
                 //char S0i=S0[i%513][tid%256];
-                char S0i=S0[i];
+                //char S0i=S0[i+tmp];
+                char S0i=S0[cidx];
+                cidx+=1;
                 //int8_t mch = BLOSUM[S0i*20+(S1j%20)][lane];
                 //int8_t mch = (S0i==S1j);
                 if(tid==-1)
