@@ -837,6 +837,113 @@ __global__ void swat_strip1(char *qry, long N, char *refs, long M, short Go, sho
 
 
 
+// set the "thread per block" to 256, each block process 8 sequences
+__global__ void swat_strip_warp(char *qry, long N, char *refs, long M, short Go, short Ge, long step)
+{
+    __shared__ int8_t BLOSUM[400];
+    const int D=513;
+    __shared__ int8_t S0[D];
+    //__shared__ int8_t S0[D][8];
+
+    //__shared__ short F[D], H0[D], qst[D], sst[D], mch[D], gop[D];
+    __shared__ short F[D][8], H0[D][8], qst[D][8], sst[D][8], mch[D][8], gop[D][8];
+
+
+    short x, y;
+    const long tid=threadIdx.x, bdm=blockDim.x, th=bdm, bx=blockIdx.x, by=blockIdx.y, bid=bx+by*gridDim.x, laneid=tid%32, warpid=tid/32, seqid=bid*32+warpid;
+    int16_t OUT[4097][8];
+    int8_t S1[4097][8];
+
+    int jump=17;
+
+    if(tid==-1)
+    {
+        printf("jump %d D %d th %d\n", jump, D, th);
+    }
+
+    if(tid>N)
+    {
+        return;
+    }
+
+    if(seqid<M/step)
+    {
+        // load qry and ref into S0, S1;
+        #pragma unroll 4
+        for(int i=tid; i<D; i+=bdm)
+        {
+            S0[i] = qry[i]%20;
+            for(int j=0; j<8;j++)
+            {
+                F[i][j] = 0;
+                H0[i][j] = 0;
+            }
+
+        }
+        __syncthreads();
+
+        #pragma unroll 4 
+        for(long i=laneid, start=seqid*step; i<step; i+=32)
+        {
+            S1[i][warpid]=refs[i+start]%20;
+        }
+
+        #pragma unroll 16 
+        for(int tmp=0; tmp<N; tmp+=512)
+        {
+        for(int j=0; j<step; j++)
+        {
+            //char S1j = S1[j];
+            int8_t S1j = S1[j][warpid];
+            #pragma unroll
+            int start = laneid*jump, end=start+jump;
+            end = min(end, 512);
+            short Ei = 0, Fi1=0, H0i=0;
+            int cidx = tmp;
+            #pragma unroll
+            for(int i=start; i<end; i++)
+            {
+                //int i= i0+start;
+                int i1 = i + 1;
+                short H0i1=H0[i1][warpid];
+                // update F
+                //x = H0[i1]-Go;
+                x = H0i1 - Go;
+                Fi1 = F[i1][warpid]-Ge;
+                Fi1 = max(x, Fi1);
+                F[i1][warpid] = Fi1;
+
+                // update E
+                x = Ei - Go;
+                //y = H0[i] - Ge;
+                y = H0i - Ge;
+                Ei = max(x, y);
+
+                int8_t S0i = S0[i];
+                //char S0i=S0[cidx];
+                //cidx+=1;
+                int8_t mch=S0i+S1j;
+                x = H0i + mch;
+                x = max(x, Ei);
+                x = max(x, Fi1);
+                x = max(x, 0);
+                //H1[i1] = x;
+                H0i = H0[i1][warpid];
+                H0[i1][warpid] = x;
+            }
+            OUT[j][tid] = x;
+        }
+        }
+   }
+}
+
+
+
+
+
+
+
+
 // set the "thread per block" to 128
 __global__ void swat_strip(char *qry, long N, char *refs, long M, short Go, short Ge, long step)
 {
@@ -878,6 +985,7 @@ __global__ void swat_strip(char *qry, long N, char *refs, long M, short Go, shor
     {
         return;
     }
+
 
     if(bid<M/step)
     {
@@ -946,7 +1054,6 @@ __global__ void swat_strip(char *qry, long N, char *refs, long M, short Go, shor
                 //y = H0[i] - Ge;
                 y = H0i - Ge;
                 Ei = max(x, y);
-
                 //x = H0[i] + (S0[i]!=S1j)?-2:2;
                 //int8_t mch = BLOSUM[S0[i][tid]*20+S1j][lane];
                 //char S0i=S0[i%513][tid%256];
@@ -967,6 +1074,7 @@ __global__ void swat_strip(char *qry, long N, char *refs, long M, short Go, shor
                 //H1[i1] = x;
                 H0i = H0[i1];
                 H0[i1] = x;
+
             }
             OUT[j][tid] = x;
         }
@@ -1078,6 +1186,7 @@ __global__ void swat_print(char *qry, long N, char *refs, long M, short Go, shor
                 H1[i1] = x; 
                 */
 
+                /*
                 //__syncthreads();
                 x-= Go;
                 for(int tmp=tid+1; tmp<wed; tmp++)
@@ -1095,7 +1204,6 @@ __global__ void swat_print(char *qry, long N, char *refs, long M, short Go, shor
                     }
                 }
 
-                /*
                 #pragma unroll
                 for(int delta=1; delta<32; delta*=2)
                 {
@@ -1110,8 +1218,8 @@ __global__ void swat_print(char *qry, long N, char *refs, long M, short Go, shor
                 H1[i1] = x;
                 */
             }
-            __syncthreads();
-            continue;
+            //__syncthreads();
+            //continue;
 
             for(long i=tid, i1=tid+1; i<N; i+=th, i1+=th)
             {

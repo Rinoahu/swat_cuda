@@ -1,18 +1,6 @@
-33554432
-tpb 256 bpg 91
-y shape (4096,)
-Traceback (most recent call last):
-  File "swat_cuda.py", line 451, in <module>
-    mod = SourceModule(swatc)
-  File "/home/xh/compiler/anaconda2/lib/python2.7/site-packages/pycuda/compiler.py", line 291, in __init__
-    arch, code, cache_dir, include_dirs)
-  File "/home/xh/compiler/anaconda2/lib/python2.7/site-packages/pycuda/compiler.py", line 254, in compile
-    return compile_plain(source, options, keep, nvcc, cache_dir, target)
-  File "/home/xh/compiler/anaconda2/lib/python2.7/site-packages/pycuda/compiler.py", line 137, in compile_plain
-    stderr=stderr.decode("utf-8", "replace"))
-pycuda.driver.CompileError: nvcc compilation of /tmp/tmplF7iwt/kernel.cu failed
-[command: nvcc --cubin -arch sm_61 -I/home/xh/compiler/anaconda2/lib/python2.7/site-packages/pycuda/cuda kernel.cu]
-[stderr:
+/home/xh/compiler/anaconda2/lib/python2.7/site-packages/mkl_fft/__init__.py:27: RuntimeWarning: numpy.ufunc size changed, may indicate binary incompatibility. Expected 216, got 192
+  from ._pydfti import (fft, ifft, fft2, ifft2, fftn, ifftn, rfft, irfft,
+swat_cuda.py:451: UserWarning: The CUDA compiler succeeded, but said the following:
 kernel.cu(12): warning: variable "BLOSUM" was declared but never referenced
 
 kernel.cu(231): warning: statement is unreachable
@@ -57,39 +45,144 @@ kernel.cu(691): warning: variable "gop" was declared but never referenced
 
 kernel.cu(701): warning: variable "bth" was declared but never referenced
 
-kernel.cu(923): warning: this pragma must immediately precede a statement
+kernel.cu(899): warning: this pragma must immediately precede a statement
 
-kernel.cu(934): error: identifier "i" is undefined
+kernel.cu(903): warning: variable "cidx" was declared but never referenced
 
-kernel.cu(935): error: expected a ";"
+kernel.cu(844): warning: variable "BLOSUM" was declared but never referenced
 
-kernel.cu(936): error: identifier "i1" is undefined
+kernel.cu(850): warning: variable "qst" was declared but never referenced
 
-kernel.cu(922): warning: variable "S1j" was declared but never referenced
+kernel.cu(850): warning: variable "sst" was declared but never referenced
 
-kernel.cu(850): warning: variable "BLOSUM" was declared but never referenced
+kernel.cu(850): warning: variable "mch" was declared but never referenced
 
-kernel.cu(856): warning: variable "qst" was declared but never referenced
+kernel.cu(850): warning: variable "gop" was declared but never referenced
 
-kernel.cu(856): warning: variable "sst" was declared but never referenced
+kernel.cu(855): warning: variable "OUT" was set but never used
 
-kernel.cu(856): warning: variable "mch" was declared but never referenced
+kernel.cu(1030): warning: this pragma must immediately precede a statement
 
-kernel.cu(856): warning: variable "gop" was declared but never referenced
+kernel.cu(1029): warning: variable "S1j" was declared but never referenced
 
-kernel.cu(866): warning: variable "bth" was declared but never referenced
+kernel.cu(957): warning: variable "BLOSUM" was declared but never referenced
 
-kernel.cu(866): warning: variable "lane" was declared but never referenced
+kernel.cu(963): warning: variable "qst" was declared but never referenced
 
-kernel.cu(867): warning: variable "OUT" was set but never used
+kernel.cu(963): warning: variable "sst" was declared but never referenced
 
-kernel.cu(1114): warning: loop is not reachable
+kernel.cu(963): warning: variable "mch" was declared but never referenced
 
-kernel.cu(1002): warning: variable "bth" was declared but never referenced
+kernel.cu(963): warning: variable "gop" was declared but never referenced
 
-kernel.cu(1002): warning: variable "lane" was declared but never referenced
+kernel.cu(973): warning: variable "bth" was declared but never referenced
 
-kernel.cu(1244): warning: variable "bth" was declared but never referenced
+kernel.cu(973): warning: variable "lane" was declared but never referenced
 
-3 errors detected in the compilation of "/tmp/tmpxft_0000028a_00000000-7_kernel.cpp1.ii".
-]
+kernel.cu(974): warning: variable "OUT" was set but never used
+
+kernel.cu(1112): warning: variable "bth" was declared but never referenced
+
+kernel.cu(1112): warning: variable "wed" was declared but never referenced
+
+kernel.cu(1112): warning: variable "lane" was declared but never referenced
+
+kernel.cu(1354): warning: variable "bth" was declared but never referenced
+
+kernel.cu(12): warning: variable "BLOSUM" was declared but never referenced
+
+kernel.cu(231): warning: statement is unreachable
+
+kernel.cu(253): warning: loop is not reachable
+
+kernel.cu(79): warning: variable "S1" was declared but never referenced
+
+kernel.cu(84): warning: variable "bdm" was declared but never referenced
+
+kernel.cu(88): warning: variable "W" was declared but never referenced
+
+kernel.cu(422): warning: use of "=" where "==" may have been intended
+
+kernel.cu(509): warning: dynamic initialization in unreachable code
+
+kernel.cu(341): warning: variable "bth" was declared but never referenced
+
+kernel.cu(593): warning: this pragma must immediately precede a statement
+
+kernel.cu(541): warning: variable "qst" was declared but never referenced
+
+kernel.cu(541): warning: variable "sst" was declared but never referenced
+
+kernel.cu(541): warning: variable "mch" was declared but never referenced
+
+kernel.cu(541): warning: variable "gop" was declared but never referenced
+
+kernel.cu(549): warning: variable "bth" was declared but never referenced
+
+kernel.cu(745): warning: this pragma must immediately precede a statement
+
+kernel.cu(691): warning: variable "H1" was set but never used
+
+kernel.cu(691): warning: variable "qst" was declared but never referenced
+
+kernel.cu(691): warning: variable "sst" was declared but never referenced
+
+kernel.cu(691): warning: variable "mch" was declared but never referenced
+
+kernel.cu(691): warning: variable "gop" was declared but never referenced
+
+kernel.cu(701): warning: variable "bth" was declared but never referenced
+
+kernel.cu(899): warning: this pragma must immediately precede a statement
+
+kernel.cu(903): warning: variable "cidx" was declared but never referenced
+
+kernel.cu(844): warning: variable "BLOSUM" was declared but never referenced
+
+kernel.cu(850): warning: variable "qst" was declared but never referenced
+
+kernel.cu(850): warning: variable "sst" was declared but never referenced
+
+kernel.cu(850): warning: variable "mch" was declared but never referenced
+
+kernel.cu(850): warning: variable "gop" was declared but never referenced
+
+kernel.cu(855): warning: variable "OUT" was set but never used
+
+kernel.cu(1030): warning: this pragma must immediately precede a statement
+
+kernel.cu(1029): warning: variable "S1j" was declared but never referenced
+
+kernel.cu(957): warning: variable "BLOSUM" was declared but never referenced
+
+kernel.cu(963): warning: variable "qst" was declared but never referenced
+
+kernel.cu(963): warning: variable "sst" was declared but never referenced
+
+kernel.cu(963): warning: variable "mch" was declared but never referenced
+
+kernel.cu(963): warning: variable "gop" was declared but never referenced
+
+kernel.cu(973): warning: variable "bth" was declared but never referenced
+
+kernel.cu(973): warning: variable "lane" was declared but never referenced
+
+kernel.cu(974): warning: variable "OUT" was set but never used
+
+kernel.cu(1112): warning: variable "bth" was declared but never referenced
+
+kernel.cu(1112): warning: variable "wed" was declared but never referenced
+
+kernel.cu(1112): warning: variable "lane" was declared but never referenced
+
+kernel.cu(1354): warning: variable "bth" was declared but never referenced
+
+
+  mod = SourceModule(swatc)
+1048576
+tpb 1024 bpg 17
+y shape (4096,)
+cpu time 3.80578899384
+D 4096 N 1048576 SL 4096 tpb 1024 bpg 17 289
+('SourceModule time and first three results:', 2.721218505859375)
+cpu 2.7214641571
