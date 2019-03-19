@@ -451,8 +451,8 @@ swatc = open('swat_cuda.cu', 'r').read()
 mod = SourceModule(swatc)
 #swat_cuda = mod.get_function("calls")
 #swat_cuda = mod.get_function("swat_print")
-swat_cuda = mod.get_function("swat_strip")
-#swat_cuda = mod.get_function("swat_strip_warp")
+#swat_cuda = mod.get_function("swat_strip")
+swat_cuda = mod.get_function("swat_strip_warp")
 
 
 #swat_cuda(d_y, D, d_x, N, S, block=(tpb, 1, 1), grid=(bpg, 1))
