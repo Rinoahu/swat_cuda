@@ -835,23 +835,41 @@ __global__ void swat_strip1(char *qry, long N, char *refs, long M, short Go, sho
 }
 
 
-
-
 // set the "thread per block" to 256, each block process 8 sequences
 __global__ void swat_strip_warp(char *qry, long N, char *refs, long M, short Go, short Ge, long step)
 {
-    __shared__ int8_t BLOSUM[400][32];
-    const int D=257;
+    //__shared__ int8_t BLOSUM[400][32];
+    __shared__ int8_t BLOSUM[32][32];
+    //__shared__ int8_t BLOSUM[200];
+
+    //int16_t x, y;
+    const int tid=threadIdx.x, bdm=blockDim.x, th=bdm, bx=blockIdx.x, by=blockIdx.y, bid=bx+by*gridDim.x, laneid=tid%32, warpid=tid/32, seqid=bid*(bdm/32)+warpid;
+    //const long tid=threadIdx.x, bdm=blockDim.x, th=bdm, bx=blockIdx.x, by=blockIdx.y, bid=bx+by*gridDim.x, laneid=tid%32, warpid=tid/32, seqid=bid;
+
+    //const int T=blockDim.x/32;
+    const int T=6, D=513;
+    //const int D=257*8/T;
+    //const int D=257;
+
     __shared__ int8_t S0[D];
+    __shared__ int8_t S3[D][20];
+    __shared__ int8_t S4[1024*4][T];
+
+    if(tid==0)
+    {
+        S3[512][10] = 1;
+        S4[1024*4-1][T-1] = 2;
+    }
     //__shared__ int8_t S0[4097];
     //__shared__ int8_t S0[D][8];
 
     //__shared__ short F[D], H0[D], qst[D], sst[D], mch[D], gop[D];
-    __shared__ int16_t F[D][8], H0[D][8], H1[D][8], qst[D][8], sst[D][8], mch[D][8], gop[D][8];
+    //__shared__ int16_t F[D][8], H0[D][8], H1[D][8], qst[D][8], sst[D][8], mch[D][8], gop[D][8];
+    __shared__ int16_t F[D][T], H0[D][T], H1[D][T], qst[D][T], sst[D][T], mch[D][T], gop[D][T];
+    //__shared__ int16_t F[D][T], H1[D][T], qst[D][T], sst[D][T], mch[D][T], gop[D][T];
+    //__shared__ int16_t H0[D*T];
 
 
-    int16_t x, y;
-    const long tid=threadIdx.x, bdm=blockDim.x, th=bdm, bx=blockIdx.x, by=blockIdx.y, bid=bx+by*gridDim.x, laneid=tid%32, warpid=tid/32, seqid=bid*32+warpid;
     int16_t OUT[4097][4096][8];
     int8_t S1[4097][8];
 
@@ -862,6 +880,177 @@ __global__ void swat_strip_warp(char *qry, long N, char *refs, long M, short Go,
     {
         printf("jump %d D %ld th %d\n", jump, D, th);
     }
+
+    if(tid>N)
+    {
+        return;
+    }
+
+    if(seqid<M/step)
+    {
+        // load qry and ref into S0, S1;
+        #pragma unroll 4
+        for(int i=tid; i<D; i+=bdm)
+        {
+            S0[i] = qry[i]%20;
+            for(int j=0; j<8;j++)
+            {
+                F[i][j] = 0;
+                H0[i][j] = 0;
+                //H0[(i+D*j)%D] = 0;
+
+            }
+
+        }
+        //__syncthreads();
+
+        #pragma unroll 4 
+        for(long i=laneid, start=seqid*step; i<step; i+=32)
+        {
+            S1[i][warpid]=refs[i+start]%20;
+        }
+
+        #pragma unroll 16 
+        for(int tmp=0; tmp<N; tmp+=D)
+        {
+        for(int j=0; j<step; j++)
+        {
+            //char S1j = S1[j];
+            int8_t S1j = S1[j][warpid];
+            #pragma unroll
+            int start = laneid*jump, end=start+jump;
+            end = min(end, D);
+            short Ei = 0, Fi1=0, H0i=0, x, y;
+            int cidx = tmp;
+            #pragma unroll
+            for(int i=start; i<end; i++)
+            {
+                //int i= i0+start;
+                int i1 = i + 1;
+                short H0i1=H0[i1][warpid];
+                //short H0i1=H0[i1+D*warpid];
+
+                // update F
+                //x = H0[i1]-Go;
+                x = H0i1 - Go;
+                Fi1 = F[i1][warpid]-Ge;
+                Fi1 = max(x, Fi1);
+                F[i1][warpid] = Fi1;
+                // update E
+                x = Ei - Go;
+                //y = H0[i] - Ge;
+                y = H0i - Ge;
+                Ei = max(x, y);
+
+                int8_t S0i = S0[i];
+                //char S0i=S0[cidx];
+                //cidx+=1;
+                //int8_t mch=(S0i==S1j);
+                //int bsidx = (min(i, j)+max(i, j)*20)%200;
+                //int8_t mch=BLOSUM[bsidx][laneid];
+                //t I=max(i, j)%20; J=min(i,j)%20;
+                //int8_t mch=BLOSUM[i%20][j%20];
+                int8_t mch=S3[i%D][laneid];
+                //int8_t mch=BLOSUM[bsidx];
+                //int8_t mch=1;
+
+                /*
+                if(tid==-1)
+                {
+                    printf("jump %d N %ld step %ld tmp %ld \n", jump, N, step, tmp);
+                }
+                */
+
+                x = H0i + mch;
+                x = max(x, Ei);
+                x = max(x, Fi1);
+                H0i = H0i1;
+                H0i1 = max(x, 0);
+
+                //H1[i1] = x;
+                //H0i = H0[i1][warpid];
+                H0i = H0i1;
+                //continue;
+
+                H0[i1][warpid] = H0i1;
+                //H0[i1][warpid] = Fi1;
+
+            }
+            __syncwarp();
+
+            // F-lazy to correct H
+            x = laneid-1>0?__shfl_up_sync(0xFFFFFFFF, x, 1, 32)-Ge: x;
+            x = laneid-2>0?__shfl_up_sync(0xFFFFFFFF, x, 2, 32)-Ge*2: x;
+            x = laneid-4>0?__shfl_up_sync(0xFFFFFFFF, x, 4, 32)-Ge*4: x;
+            x = laneid-8>0?__shfl_up_sync(0xFFFFFFFF, x, 8, 32)-Ge*8: x;
+            x = laneid-16>0?__shfl_up_sync(0xFFFFFFFF, x, 16, 32)-Ge*16: x;
+
+            x = laneid-1>0?max(__shfl_up_sync(0xFFFFFFFF, x, 1, 32), x):x;
+            x = laneid-2>0?max(__shfl_up_sync(0xFFFFFFFF, x, 2, 32), x):x;
+            x = laneid-4>0?max(__shfl_up_sync(0xFFFFFFFF, x, 4, 32), x):x;
+            x = laneid-8>0?max(__shfl_up_sync(0xFFFFFFFF, x, 8, 32), x):x;
+            x = laneid-16>0?max(__shfl_up_sync(0xFFFFFFFF, x, 16, 32), x):x;
+            __syncwarp();
+
+            //int End = end+jump;
+            //End = End<D?End:D;
+            //End = min(end+jump, D);
+            Ei = x;
+            for(int i=start; i<end; i++)
+            {
+                Ei -= Ge;
+                if(Ei <= H0[i][warpid])
+                //if(Ei <= H0[i+D*warpid])
+                {
+                    break;
+                }
+                else
+                {
+                    H0[i][warpid]= Ei;
+                    //H0[i+D*warpid]= Ei;
+
+                }
+
+            }
+            __syncwarp();
+            for(int tmp=laneid; tmp<=D; tmp+=32)
+            {
+                OUT[j][tmp][warpid] = H0[tmp][warpid];
+                //OUT[j][tmp][warpid] = H0[tmp+D*warpid];
+
+            }
+        }
+        }
+   }
+}
+
+
+
+
+
+
+// set the "thread per block" to 256, each block process 8 sequences
+__global__ void swat_strip_warp0(char *qry, long N, char *refs, long M, short Go, short Ge, long step)
+{
+    //__shared__ int8_t BLOSUM[400][32];
+    __shared__ int8_t BLOSUM[32][32];
+    //__shared__ int8_t BLOSUM[200];
+
+    //int16_t x, y;
+    const int tid=threadIdx.x, bdm=blockDim.x, th=bdm, bx=blockIdx.x, by=blockIdx.y, bid=bx+by*gridDim.x, laneid=tid%32, warpid=tid/32, seqid=bid*(bdm/32)+warpid;
+
+    //const int T=blockDim.x/32;
+    const int T=4;
+    const int D=(256+32)*8/T;
+    //const int D=257;
+
+    __shared__ int8_t S0[D];
+    __shared__ int16_t F[D][T], H0[D][T], H1[D][T], qst[D][T], sst[D][T], mch[D][T], gop[D][T];
+
+    int16_t OUT[4097][4096][8];
+    int8_t S1[4097][8];
+
+    long int jump=((((D+31)/32)>>1)<<1)+1;
 
     if(tid>N)
     {
@@ -898,48 +1087,34 @@ __global__ void swat_strip_warp(char *qry, long N, char *refs, long M, short Go,
             //char S1j = S1[j];
             int8_t S1j = S1[j][warpid];
             #pragma unroll
-            int start = laneid*jump, end=start+jump;
-            end = min(end, D);
-            short Ei = 0, Fi1=0, H0i=0;
+            int start = laneid, end=D;
+            //end = min(end, D);
+            short Ei = 0, Fi1=0, H0i=0, x, y;
             int cidx = tmp;
             #pragma unroll
-            for(int i=start; i<end; i++)
+            for(int i=start; i<end; i+=32)
             {
                 //int i= i0+start;
                 int i1 = i + 1;
                 short H0i1=H0[i1][warpid];
+
                 // update F
-                //x = H0[i1]-Go;
                 x = H0i1 - Go;
                 Fi1 = F[i1][warpid]-Ge;
                 Fi1 = max(x, Fi1);
                 F[i1][warpid] = Fi1;
 
-                // update E
-                x = Ei - Go;
-                //y = H0[i] - Ge;
-                y = H0i - Ge;
-                Ei = max(x, y);
-
+                // update H'
                 int8_t S0i = S0[i];
-                //char S0i=S0[cidx];
-                //cidx+=1;
-                //int8_t mch=(S0i==S1j);
-                int8_t mch=BLOSUM[i][laneid];
-                //int8_t mch=BLOSUM[i%400];
-
-                if(tid==-1)
-                {
-                    printf("jump %d N %ld step %ld tmp %ld \n", jump, N, step, tmp);
-                }
+                int8_t mch=BLOSUM[i%20][j%20];
 
                 x = H0i + mch;
-                x = max(x, Ei);
+                //x = max(x, Ei);
                 x = max(x, Fi1);
-                x = max(x, 0);
-                //H1[i1] = x;
-                H0i = H0[i1][warpid];
-                H0[i1][warpid] = x;
+
+                H1[i1][warpid] = H0i1;
+                continue;
+
             }
             __syncwarp();
 
@@ -965,20 +1140,24 @@ __global__ void swat_strip_warp(char *qry, long N, char *refs, long M, short Go,
             {
                 Ei -= Ge;
                 if(Ei <= H0[i][warpid])
+                //if(Ei <= H0[i+D*warpid])
                 {
                     break;
                 }
                 else
                 {
                     H0[i][warpid]= Ei;
+                    //H0[i+D*warpid]= Ei;
+
                 }
 
             }
             __syncwarp();
-
-            for(int tmp=laneid; tmp<=256; tmp+=32)
+            for(int tmp=laneid; tmp<=D; tmp+=32)
             {
-            OUT[j][tmp][warpid] = H0[tmp][warpid];
+                OUT[j][tmp][warpid] = H0[tmp][warpid];
+                //OUT[j][tmp][warpid] = H0[tmp+D*warpid];
+
             }
         }
         }
@@ -1002,7 +1181,7 @@ __global__ void swat_strip(char *qry, long N, char *refs, long M, short Go, shor
     //int8_t S0[D], S1[D];
     //__shared__ int8_t S0[D], S1[D], BLOSUM[400][32];
     //__shared__ int8_t S1[D], BLOSUM[400][32];
-    __shared__ int8_t S1[D], BLOSUM[400];
+    __shared__ int8_t S1[D], BLOSUM[32][32];
     //int8_t S0[513][256];
     int8_t S0[D];
 
@@ -1108,9 +1287,11 @@ __global__ void swat_strip(char *qry, long N, char *refs, long M, short Go, shor
                 Ei = max(x, y);
                 int8_t S0i=S0[cidx];
                 cidx+=1;
-                int bidx=S0i*20+i%20;
-                int8_t mch = BLOSUM[bidx];
+                //int bidx=S0i*20+i%20;
+                //int8_t mch = BLOSUM[bidx][lane];
+                //int8_t mch = (S0i==S1j);
                 //int8_t mch = BLOSUM[S0i*20+S1j];
+                int8_t mch = BLOSUM[i%20][j%20];
                 //x = H0[i] + (S0[i]!=S1j)?-2:2;
                 //int8_t mch = BLOSUM[S0[i][tid]*20+S1j][lane];
                 //char S0i=S0[i%513][tid%256];

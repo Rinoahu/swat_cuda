@@ -10,7 +10,11 @@ import numpy.linalg as la
 from pycuda.compiler import SourceModule
 from pycuda import gpuarray
 import sys
-from numba import njit, prange
+try:
+    from numba import njit, prange
+except:
+    njit = lambda x: x
+    prange = xrange
 from time import time
 
 #prange = xrange
@@ -54,7 +58,7 @@ S = np.int64(SIM)
 print N
 
 # determin thread_per_block and block_per_grid
-tpb =min(2**8, S)
+tpb =min(32*6, S)
 #tpb =min(2**10, S//2)
 #bpg = (N + S - 1) // S
 #bpg = (bpg + tpb - 1) // tpb

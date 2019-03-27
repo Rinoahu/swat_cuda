@@ -1,7 +1,7 @@
 /home/xh/compiler/anaconda2/lib/python2.7/site-packages/mkl_fft/__init__.py:27: RuntimeWarning: numpy.ufunc size changed, may indicate binary incompatibility. Expected 216, got 192
   from ._pydfti import (fft, ifft, fft2, ifft2, fftn, ifftn, rfft, irfft,
 33554432
-tpb 256 bpg 91
+tpb 128 bpg 91
 y shape (4096,)
 Traceback (most recent call last):
   File "swat_cuda.py", line 451, in <module>
@@ -12,7 +12,7 @@ Traceback (most recent call last):
     return compile_plain(source, options, keep, nvcc, cache_dir, target)
   File "/home/xh/compiler/anaconda2/lib/python2.7/site-packages/pycuda/compiler.py", line 137, in compile_plain
     stderr=stderr.decode("utf-8", "replace"))
-pycuda.driver.CompileError: nvcc compilation of /tmp/tmp9TUY6G/kernel.cu failed
+pycuda.driver.CompileError: nvcc compilation of /tmp/tmp736Cot/kernel.cu failed
 [command: nvcc --cubin -arch sm_61 -I/home/xh/compiler/anaconda2/lib/python2.7/site-packages/pycuda/cuda kernel.cu]
 [stderr:
 kernel.cu(12): warning: variable "BLOSUM" was declared but never referenced
@@ -59,51 +59,81 @@ kernel.cu(691): warning: variable "gop" was declared but never referenced
 
 kernel.cu(701): warning: variable "bth" was declared but never referenced
 
-kernel.cu(901): warning: this pragma must immediately precede a statement
+kernel.cu(913): warning: this pragma must immediately precede a statement
 
-kernel.cu(925): warning: variable "S0i" was declared but never referenced
+kernel.cu(939): warning: variable "S0i" was declared but never referenced
 
-kernel.cu(982): error: a value of type "int16_t *" cannot be assigned to an entity of type "int16_t"
+kernel.cu(972): error: identifier "__syncwarp" is undefined
 
-kernel.cu(900): warning: variable "S1j" was declared but never referenced
+kernel.cu(975): error: identifier "__shfl_up_sync" is undefined
 
-kernel.cu(905): warning: variable "cidx" was declared but never referenced
+kernel.cu(912): warning: variable "S1j" was declared but never referenced
 
-kernel.cu(851): warning: variable "H1" was declared but never referenced
+kernel.cu(917): warning: variable "cidx" was declared but never referenced
 
-kernel.cu(851): warning: variable "qst" was declared but never referenced
+kernel.cu(861): warning: variable "H1" was declared but never referenced
 
-kernel.cu(851): warning: variable "sst" was declared but never referenced
+kernel.cu(861): warning: variable "qst" was declared but never referenced
 
-kernel.cu(851): warning: variable "mch" was declared but never referenced
+kernel.cu(861): warning: variable "sst" was declared but never referenced
 
-kernel.cu(851): warning: variable "gop" was declared but never referenced
+kernel.cu(861): warning: variable "mch" was declared but never referenced
 
-kernel.cu(856): warning: variable "OUT" was set but never used
+kernel.cu(861): warning: variable "gop" was declared but never referenced
 
-kernel.cu(1083): warning: this pragma must immediately precede a statement
+kernel.cu(866): warning: variable "OUT" was set but never used
 
-kernel.cu(1012): warning: variable "qst" was declared but never referenced
+kernel.cu(1082): warning: this pragma must immediately precede a statement
 
-kernel.cu(1012): warning: variable "sst" was declared but never referenced
+kernel.cu(1106): warning: variable "S0i" was declared but never referenced
 
-kernel.cu(1012): warning: variable "mch" was declared but never referenced
+kernel.cu(1122): error: identifier "__syncwarp" is undefined
 
-kernel.cu(1012): warning: variable "gop" was declared but never referenced
+kernel.cu(1125): error: identifier "__shfl_up_sync" is undefined
 
-kernel.cu(1022): warning: variable "bth" was declared but never referenced
+kernel.cu(1081): warning: variable "S1j" was declared but never referenced
 
-kernel.cu(1022): warning: variable "lane" was declared but never referenced
+kernel.cu(1086): warning: variable "cidx" was declared but never referenced
 
-kernel.cu(1023): warning: variable "OUT" was set but never used
+kernel.cu(1033): warning: variable "th" was declared but never referenced
 
-kernel.cu(1169): warning: variable "bth" was declared but never referenced
+kernel.cu(1041): warning: variable "H1" was declared but never referenced
 
-kernel.cu(1169): warning: variable "wed" was declared but never referenced
+kernel.cu(1041): warning: variable "qst" was declared but never referenced
 
-kernel.cu(1169): warning: variable "lane" was declared but never referenced
+kernel.cu(1041): warning: variable "sst" was declared but never referenced
 
-kernel.cu(1411): warning: variable "bth" was declared but never referenced
+kernel.cu(1041): warning: variable "mch" was declared but never referenced
 
-1 error detected in the compilation of "/tmp/tmpxft_00007e3c_00000000-6_kernel.cpp1.ii".
+kernel.cu(1041): warning: variable "gop" was declared but never referenced
+
+kernel.cu(1043): warning: variable "OUT" was set but never used
+
+kernel.cu(1046): warning: variable "jump" was declared but never referenced
+
+kernel.cu(1264): warning: this pragma must immediately precede a statement
+
+kernel.cu(1193): warning: variable "qst" was declared but never referenced
+
+kernel.cu(1193): warning: variable "sst" was declared but never referenced
+
+kernel.cu(1193): warning: variable "mch" was declared but never referenced
+
+kernel.cu(1193): warning: variable "gop" was declared but never referenced
+
+kernel.cu(1203): warning: variable "bth" was declared but never referenced
+
+kernel.cu(1203): warning: variable "lane" was declared but never referenced
+
+kernel.cu(1204): warning: variable "OUT" was set but never used
+
+kernel.cu(1352): warning: variable "bth" was declared but never referenced
+
+kernel.cu(1352): warning: variable "wed" was declared but never referenced
+
+kernel.cu(1352): warning: variable "lane" was declared but never referenced
+
+kernel.cu(1594): warning: variable "bth" was declared but never referenced
+
+4 errors detected in the compilation of "/tmp/tmpxft_00003b38_00000000-7_kernel.cpp1.ii".
 ]
