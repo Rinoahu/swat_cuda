@@ -853,25 +853,32 @@ __global__ void swat_strip_warp(char *qry, long N, char *refs, long M, short Go,
 
     __shared__ int8_t S0[D];
     __shared__ int8_t S3[D][20];
+    //__shared__ int8_t S3[20][D];
     __shared__ int8_t S4[1024*4][T];
+    //__shared__ int8_t S4[T][1024*4];
 
     if(tid==0)
     {
         S3[512][10] = 1;
+        //S3[10][512] = 1;
         S4[1024*4-1][T-1] = 2;
+        //S4[T-1][1024*4-1] = 2;
     }
     //__shared__ int8_t S0[4097];
     //__shared__ int8_t S0[D][8];
-
     //__shared__ short F[D], H0[D], qst[D], sst[D], mch[D], gop[D];
     //__shared__ int16_t F[D][8], H0[D][8], H1[D][8], qst[D][8], sst[D][8], mch[D][8], gop[D][8];
     __shared__ int16_t F[D][T], H0[D][T], H1[D][T], qst[D][T], sst[D][T], mch[D][T], gop[D][T];
+    //__shared__ int16_t F[T][D], H0[T][D], H1[T][D], qst[T][D], sst[T][D], mch[T][D], gop[T][D];
+
+
     //__shared__ int16_t F[D][T], H1[D][T], qst[D][T], sst[D][T], mch[D][T], gop[D][T];
     //__shared__ int16_t H0[D*T];
 
 
     int16_t OUT[4097][4096][8];
     int8_t S1[4097][8];
+    //int8_t S1[8][4097];
 
     //int jump=17;
     long int jump=((((D+31)/32)>>1)<<1)+1;
@@ -893,30 +900,34 @@ __global__ void swat_strip_warp(char *qry, long N, char *refs, long M, short Go,
         for(int i=tid; i<D; i+=bdm)
         {
             S0[i] = qry[i]%20;
-            for(int j=0; j<8;j++)
+            for(int j=0; j<T;j++)
             {
                 F[i][j] = 0;
+                //F[j][i] = 0;
                 H0[i][j] = 0;
+                //H0[j][i] = 0;
                 //H0[(i+D*j)%D] = 0;
-
             }
 
         }
         //__syncthreads();
-
         #pragma unroll 4 
         for(long i=laneid, start=seqid*step; i<step; i+=32)
         {
             S1[i][warpid]=refs[i+start]%20;
+            //S1[warpid][i]=refs[i+start]%20;
+
         }
 
         #pragma unroll 16 
         for(int tmp=0; tmp<N; tmp+=D)
         {
+        __shared__ int xx[10];
         for(int j=0; j<step; j++)
         {
             //char S1j = S1[j];
             int8_t S1j = S1[j][warpid];
+            //int8_t S1j = S1[warpid][j];
             #pragma unroll
             int start = laneid*jump, end=start+jump;
             end = min(end, D);
@@ -928,14 +939,21 @@ __global__ void swat_strip_warp(char *qry, long N, char *refs, long M, short Go,
                 //int i= i0+start;
                 int i1 = i + 1;
                 short H0i1=H0[i1][warpid];
+                //short H0i1=H0[warpid][i1];
+
                 //short H0i1=H0[i1+D*warpid];
 
                 // update F
                 //x = H0[i1]-Go;
                 x = H0i1 - Go;
                 Fi1 = F[i1][warpid]-Ge;
+                //Fi1 = F[warpid][i1]-Ge;
+
                 Fi1 = max(x, Fi1);
                 F[i1][warpid] = Fi1;
+                //F[warpid][i1] = Fi1;
+
+
                 // update E
                 x = Ei - Go;
                 //y = H0[i] - Ge;
@@ -951,6 +969,8 @@ __global__ void swat_strip_warp(char *qry, long N, char *refs, long M, short Go,
                 //t I=max(i, j)%20; J=min(i,j)%20;
                 //int8_t mch=BLOSUM[i%20][j%20];
                 int8_t mch=S3[i%D][laneid];
+                //int8_t mch=S3[laneid][i%D];
+
                 //int8_t mch=BLOSUM[bsidx];
                 //int8_t mch=1;
 
@@ -973,6 +993,8 @@ __global__ void swat_strip_warp(char *qry, long N, char *refs, long M, short Go,
                 //continue;
 
                 H0[i1][warpid] = H0i1;
+                //H0[warpid][i1]= H0i1;
+
                 //H0[i1][warpid] = Fi1;
 
             }
@@ -1000,6 +1022,7 @@ __global__ void swat_strip_warp(char *qry, long N, char *refs, long M, short Go,
             {
                 Ei -= Ge;
                 if(Ei <= H0[i][warpid])
+                //if(Ei <= H0[warpid][i])
                 //if(Ei <= H0[i+D*warpid])
                 {
                     break;
@@ -1007,6 +1030,7 @@ __global__ void swat_strip_warp(char *qry, long N, char *refs, long M, short Go,
                 else
                 {
                     H0[i][warpid]= Ei;
+                    //H0[warpid][i]= Ei;
                     //H0[i+D*warpid]= Ei;
 
                 }
@@ -1016,6 +1040,7 @@ __global__ void swat_strip_warp(char *qry, long N, char *refs, long M, short Go,
             for(int tmp=laneid; tmp<=D; tmp+=32)
             {
                 OUT[j][tmp][warpid] = H0[tmp][warpid];
+                //OUT[j][tmp][warpid] = H0[warpid][tmp];
                 //OUT[j][tmp][warpid] = H0[tmp+D*warpid];
 
             }
